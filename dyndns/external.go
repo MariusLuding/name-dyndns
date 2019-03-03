@@ -2,43 +2,25 @@ package dyndns
 
 import (
 	"errors"
-	"io/ioutil"
-	"net/http"
+	"os/exec"
+	"strings"
 )
-
-// Urls contains a set of mirrors in which a
-// raw IP string can be retreived. It is exported
-// for the intent of modification.
-var (
-	Urls = []string{"http://myexternalip.com/raw"}
-)
-
-func tryMirror(url string) (string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(contents), nil
-}
 
 // GetExternalIP retrieves the external facing IP Address.
-// If multiple mirrors are provided in Urls,
-// it will try each one (in order), should
-// preceding mirrors fail.
+// This Variant does still rely upon others supplying the correct ip, however google
+// or other larger companies might be more trustworthy.
+
+
 func GetExternalIP() (string, error) {
-	for _, url := range Urls {
-		resp, err := tryMirror(url)
-		if err == nil {
-			return resp, err
-		}
+	cmdoutput, err := exec.Command("dig", "-4", "TXT", "+short", "o-o.myaddr.l.google.com", "@ns1.google.com").CombinedOutput()
+	svariable := string(cmdoutput)
+	svariable = strings.Replace(svariable, "\"", "", -1)
+	if err == nil {
+		return svariable, err
 	}
+
+
+
 
 	return "", errors.New("Could not retreive external IP")
 }
